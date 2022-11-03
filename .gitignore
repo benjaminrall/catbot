@@ -153,5 +153,9 @@ cython_debug/
 
 start_data.json
 timings_data.json
-/start_data.json
-/timings_data.json
+constants.py
+data.json
+*/start_data.json
+*/timings_data.json
+*/constants.py
+*/data.json
