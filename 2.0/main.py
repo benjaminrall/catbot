@@ -527,7 +527,7 @@ async def stats(ctx, user: discord.Member = None):
 
     user_data = data[user_key]
     embed = Embed()
-    embed.set_author(f"{name}'s Stats", icon_url=user.display_avatar)
+    embed.set_author(name=f"{name}'s Stats", icon_url=user.display_avatar)
     embed.add_field(name="Score",
         value=f"{name} has a total score of {int(user_data['score'])}.\n" 
         + f"They have had {int(user_data['penalties'])} points given to them as penalties, "
