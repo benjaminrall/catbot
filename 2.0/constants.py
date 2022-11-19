@@ -8,7 +8,7 @@ VALORANT_ICON = "https://cdn.iconscout.com/icon/free/png-256/valorant-3251602-27
 # List of admin user IDs - admins can cancel other people's votes, valorant calls etc and can adjust points manually
 ADMINS = [312250768038297600]
 # Channel to send valorant pings to
-PINGS_CHANNEL = 867173524204421122
+PINGS_CHANNEL = 1013175901103595730
 # List of all users to be pinged with an empty /valorant call
 ALL_USERS = [312250768038297600, 204316473882181633, 354758457167052811, 707654215849345057, 221264723512000512, 867176767022301204]
 # Penalty for rejecting without a reason
