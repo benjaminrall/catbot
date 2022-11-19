@@ -532,7 +532,7 @@ async def stats(ctx, user: discord.Member = None):
         value=f"{name} has a total score of {int(user_data['score'])}.\n" 
         + f"They have had {int(user_data['penalties'])} points given to them as penalties, "
         + f"with a further {int(user_data['vote_penalties'])} points given in votes.",
-        inline=True
+        inline=False
     )
     embed.add_field(name="Responses",
         value=f"{name} has been pinged for a total of {round(user_data['ping_time'], 2)} minutes, "
@@ -540,20 +540,20 @@ async def stats(ctx, user: discord.Member = None):
         + f"They have accepted valorant {user_data['acceptances']} times.\n"
         + f"They have rejected valorant with no reason {user_data['no_reasons']} times.\n"
         + f"They have rejected valorant with a reason {user_data['reasons']} times.",
-        inline=True
+        inline=False
     )
     embed.add_field(name="Acceptances",
         value=f"{name} has accepted valorant {user_data['acceptances']} times.\n"
         + f"On average, it takes them {round(user_data['acceptance_time'] / user_data['acceptances'], 2)} minutes to join the call after accepting "
         + f"and they have missed {user_data['acceptances_missed']} acceptances.",
-        inline=True
+        inline=False
     )
     embed.add_field(name="Votes",
         value=f"{name} has started {user_data['votes_started']} votes, and been voted against"
         + f"{user_data['voted_against']} times.\n They have voted for other people's reasons "
         + f"to be valid {user_data['valid_votes']} times, and invalid {user_data['invalid_votes']} times.\n"
         + f"They have voted to punish people {user_data['punish_votes']} times and pardoned people {user_data['pardon_votes']} times.",
-        inline=True
+        inline=False
     )
 
     await ctx.respond(embed=embed)
