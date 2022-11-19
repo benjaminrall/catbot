@@ -53,7 +53,7 @@ async def valorant(ctx,
         all_users = [bot.get_user(user) for user in ALL_USERS]
     users = []
     for user in all_users:
-        if user is not None and not user.bot and user.id != creator and user not in users:
+        if user is not None and not user.bot and user.id != creator and user.id not in users:
             users.append(user.id)
     
     valorant_call = ValorantCall(creator, users, ctx.interaction) 
@@ -192,6 +192,9 @@ async def vote(ctx, user: discord.Member):
     global valorant_call, current_vote, data 
     if user is None:
         await ctx.respond(content="Invalid user given.", ephemeral=True)
+        return
+    if user.id == ctx.user.id:
+        await ctx.respond(content="You cannot start a vote against yourself.", ephemeral=True)
         return
     if valorant_call is None:
         await ctx.respond(content="No valid valorant call to vote on.", ephemeral=True)
@@ -355,8 +358,215 @@ async def finalise_current_vote():
         f.write(json.dumps(data, indent=4))
 
 @bot.slash_command(description="Give a further punishment to someone in particularly disappointing cases.")
-async def punish(ctx, user: discord.Member, amount: int):
+async def punish(ctx, user: discord.Member, amount: int, reason: str):
+    global valorant_call, current_vote, data 
+    if user is None:
+        await ctx.respond(content="Invalid user given.", ephemeral=True)
+        return
+    if user.id == ctx.user.id:
+        await ctx.respond(content="You cannot punish yourself.", ephemeral=True)
+        return
+    if current_vote is not None:
+        await ctx.respond(content="There is already an ongoing vote. Wait for the current vote to end and then try again.", ephemeral=True)
+        return
+    if amount <= 0:
+        await ctx.respond(content="The amount to punish someone by must be greater than 0.", ephemeral=True)
+        return
+    if amount > 100:
+        await ctx.respond(content="The amount to punish someone by can be at most 100.", ephemeral=True)
+        return
+    
+    current_vote = {
+        "creator": ctx.user,
+        "target": user,
+        "interaction": ctx.interaction,
+        "voters": [u for u in ALL_USERS if u != ctx.user.id and u != user.id],
+        "voted": [],
+        "amount": amount,
+        "total_votes": 0,
+        "punish_votes": 0,
+        "pardon_votes": 0
+    }
+
+    creator_key = str(ctx.user.id)
+    target_key = str(user.id)
+
+    if creator_key not in data:
+        data[creator_key] = copy.copy(TEMPLATE_DATA)
+    if target_key not in data:
+        data[target_key] = copy.copy(TEMPLATE_DATA)
+
+    data[creator_key]["votes_started"] += 1
+    data[target_key]["voted_against"] += 1
+
+    embed = Embed()
+    embed.set_author(name=f"{ctx.author.display_name} has started a vote to punish {user.display_name}.", icon_url=user.display_avatar)
+    embed.add_field(name=f"The punishment is {amount} point{('s' if amount != 1 else '')} for:", value=f"{reason}")
+    embed.set_footer(text="Vote using the buttons below. \nIf the majority votes for the punishment, the specified penalty will be added.")
+    
+    view = View()
+
+    async def punish_button_callback(interaction: Interaction):
+        global current_vote
+        if interaction.user.id not in current_vote["voters"]:
+            await interaction.response.send_message(
+                content="You are not allowed to vote in this matter.", ephemeral=True)
+            return
+        if interaction.user.id in current_vote["voted"]:
+            await interaction.response.send_message(
+                content="You have already voted in this matter.", ephemeral=True)
+            return
+        current_vote["voted"] += [interaction.user.id]
+        current_vote["total_votes"] += 1
+        current_vote["punish_votes"] += 1
+        voter_key = str(interaction.user.id)
+        if voter_key not in data:
+            data[voter_key] = copy.copy(TEMPLATE_DATA)
+        data[voter_key]["punish_votes"] += 1
+        voted_embed = Embed(description=f"{current_vote['total_votes']}/{len(current_vote['voters'])} votes submitted.")
+        voted_embed.set_author(name=f"{interaction.user.display_name} has voted 'Punish'", 
+            icon_url=interaction.user.display_avatar)
+        await interaction.response.send_message(embed=voted_embed)
+        if current_vote["total_votes"] == len(current_vote["voters"]) \
+                or current_vote["pardon_votes"] > len(current_vote["voters"]) // 2 \
+                or current_vote["punish_votes"] > len(current_vote["voters"]) // 2:
+            await finalise_current_punish_vote()
+
+    async def pardon_button_callback(interaction: Interaction):
+        global current_vote
+        if interaction.user.id not in current_vote["voters"]:
+            await interaction.response.send_message(
+                content="You are not allowed to vote in this matter.", ephemeral=True)
+            return
+        if interaction.user.id in current_vote["voted"]:
+            await interaction.response.send_message(
+                content="You have already voted in this matter.", ephemeral=True)
+            return
+        current_vote["voted"] += [interaction.user.id]
+        current_vote["total_votes"] += 1
+        current_vote["pardon_votes"] += 1
+        voter_key = str(interaction.user.id)
+        if voter_key not in data:
+            data[voter_key] = copy.copy(TEMPLATE_DATA)
+        data[voter_key]["pardon_votes"] += 1
+        voted_embed = Embed(description=f"{current_vote['total_votes']}/{len(current_vote['voters'])} votes submitted.")
+        voted_embed.set_author(name=f"{interaction.user.display_name} has voted 'Pardon'", 
+            icon_url=interaction.user.display_avatar)
+        await interaction.response.send_message(embed=voted_embed)
+        if current_vote["total_votes"] == len(current_vote["voters"]) \
+                or current_vote["pardon_votes"] > len(current_vote["voters"]) // 2 \
+                or current_vote["punish_votes"] > len(current_vote["voters"]) // 2:
+            await finalise_current_punish_vote()
+
+    async def cancel_button_callback(interaction: Interaction):
+        global current_vote
+        if interaction.user.id != current_vote["creator"].id \
+                and interaction.user.id not in ADMINS:
+            await interaction.response.send_message(content="You cannot cancel a vote " 
+                + "that you did not create.", ephemeral=True)
+            return
+        cancelled_embed = Embed()
+        cancelled_embed.set_author(name="Vote cancelled.", icon_url=current_vote["creator"].display_avatar)
+        await interaction.response.edit_message(embed=cancelled_embed, view=None)
+        current_vote = None
+        with open("data.json", "w") as f:
+            f.write(json.dumps(data, indent=4))
+
+    punish_button = Button(label="Punish", style=ButtonStyle.green)
+    pardon_button = Button(label="Pardon", style=ButtonStyle.red)
+    cancel_button = Button(label="Cancel", style=ButtonStyle.blurple)
+
+    punish_button.callback = punish_button_callback
+    pardon_button.callback = pardon_button_callback
+    cancel_button.callback = cancel_button_callback
+
+    view.add_item(punish_button)
+    view.add_item(pardon_button)
+    view.add_item(cancel_button)
+
+    await ctx.respond(embed=embed, view=view)
+
+async def finalise_current_punish_vote():
+    global valorant_call, current_vote, data
+    if current_vote is None:
+        return
+    interaction: Interaction = current_vote["interaction"]
+    vote_embed = Embed()
+    vote_embed.set_author(name="This vote has now ended.", icon_url=current_vote["target"].display_avatar)
+    await interaction.edit_original_message(embed=vote_embed, view=None)
+    ended_embed = Embed()
+    ended_embed.set_author(name=f"The vote against {current_vote['target'].display_name} has concluded.", 
+        icon_url=current_vote['target'].display_avatar)
+    verdict = ""
+    if current_vote["punish_votes"] > current_vote["pardon_votes"]:
+        verdict = f"The punishment was voted for, so a penalty of {current_vote['amount']} has been administered."
+        target_id = current_vote["target"].id
+        data[str(target_id)]["score"] += current_vote["amount"]
+        data[str(target_id)]["vote_penalties"] += current_vote["amount"] 
+    elif current_vote["punish_votes"] < current_vote["pardon_votes"]:
+        verdict = "The punishment was voted against, so no" \
+                + " penalty has been administered."
+    else:
+        verdict = "The vote ended in a draw, so no action has been taken."
+    ended_embed.add_field(name="Final Verdict:", value=verdict)
+    await interaction.followup.send(embed=ended_embed)
+    current_vote = None
+    with open("data.json", "w") as f:
+        f.write(json.dumps(data, indent=4))    
+
+@bot.slash_command(description="Get a specified user's stats.")
+async def stats(ctx, user: discord.Member = None):
+    global data
+    if user is None:
+        user = ctx.user
+    user_key = str(user.id)
+    name = user.display_name
+    if user_key not in data:
+        ctx.respond(f"No data is stored for user {name}.", ephemeral=True)
+        return
+
+    user_data = data[user_key]
+    embed = Embed()
+    embed.set_author(f"{name}'s Stats", icon_url=user.display_avatar)
+    embed.add_field(name="Score",
+        value=f"{name} has a total score of {int(user_data['score'])}.\n" 
+        + f"They have had {int(user_data['penalties'])} points given to them as penalties, "
+        + f"with a further {int(user_data['vote_penalties'])} points given in votes."
+    )
+    embed.add_field(name="Responses",
+        value=f"{name} has been pinged for a total of {round(user_data['ping_time'], 2)} minutes, "
+        + f"with an average response time of {round(user_data['ping_time'] / (user_data['acceptances'] + user_data['no_reasons'] + user_data['reasons']), 2)} minutes.\n"
+        + f"They have accepted valorant {user_data['acceptances']} times.\n"
+        + f"They have rejected valorant with no reason {user_data['no_reasons']} times.\n"
+        + f"They have rejected valorant with a reason {user_data['reasons']} times."
+    )
+    embed.add_field(name="Acceptances",
+        value=f"{name} has accepted valorant {user_data['acceptances']} times.\n"
+        + f"On average, it takes them {round(user_data['acceptance_time'] / user_data['acceptances'], 2)} minutes to join the call after accepting "
+        + f"and they have missed {user_data['acceptances_missed']} acceptances."
+    )
+    embed.add_field(name="Votes",
+        value=f"{name} has started {user_data['votes_started']} votes, and been voted against"
+        + f"{user_data['voted_against']} times.\n They have voted for other people's reasons "
+        + f"to be valid {user_data['valid_votes']} times, and invalid {user_data['invalid_votes']} times.\n"
+        + f"They have voted to punish people {user_data['punish_votes']} times and pardoned people {user_data['pardon_votes']} times."
+    )
+
+    ctx.respond(embed=embed)
+
+@bot.slash_command(description="Get each player's score and judge them to decide the ultimate 5 stack ruiner.")
+async def judgement(ctx):
     pass
+
+@bot.slash_command(description="Command for admin to manually adjust score of user in special cases.")
+async def set_score(ctx, user: discord.Member, amount: int):
+    if ctx.user.id not in ADMINS:
+        ctx.respond("Only admins can use this command.", ephemeral=True)
+    target_id = user.id
+    data[str(target_id)]["score"] = amount
+    with open("data.json", "w") as f:
+        f.write(json.dumps(data, indent=4))
+    ctx.respond("Score changed successfully.", ephemeral=True)
 
 # LOOP TASK
 @tasks.loop(seconds=1)
