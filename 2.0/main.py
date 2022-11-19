@@ -522,7 +522,7 @@ async def stats(ctx, user: discord.Member = None):
     user_key = str(user.id)
     name = user.display_name
     if user_key not in data:
-        ctx.respond(f"No data is stored for user {name}.", ephemeral=True)
+        await ctx.respond(f"No data is stored for user {name}.", ephemeral=True)
         return
 
     user_data = data[user_key]
@@ -565,12 +565,13 @@ async def judgement(ctx):
 @bot.slash_command(description="Command for admin to manually adjust score of user in special cases.")
 async def set_score(ctx, user: discord.Member, amount: int):
     if ctx.user.id not in ADMINS:
-        ctx.respond("Only admins can use this command.", ephemeral=True)
+        await ctx.respond("Only admins can use this command.", ephemeral=True)
+        return
     target_id = user.id
     data[str(target_id)]["score"] = amount
     with open("data.json", "w") as f:
         f.write(json.dumps(data, indent=4))
-    ctx.respond("Score changed successfully.", ephemeral=True)
+    await ctx.respond("Score changed successfully.", ephemeral=True)
 
 # LOOP TASK
 @tasks.loop(seconds=1)
