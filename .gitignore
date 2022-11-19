@@ -1,3 +1,13 @@
+
+start_data.json
+timings_data.json
+data.json
+*/start_data.json
+*/timings_data.json
+*/data.json
+*/token.txt
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -151,12 +161,3 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-start_data.json
-timings_data.json
-constants.py
-data.json
-*/start_data.json
-*/timings_data.json
-*/constants.py
-*/data.json
-2.0/constants.py

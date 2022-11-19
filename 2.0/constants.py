@@ -1,4 +1,6 @@
-BOT_TOKEN = "MTAxMjEyMDAwNTA1NzQ1NDEyMA.GK3NMU.EVsr33v5IID5tf-g8bMjkrafxPNDw0uCAgUDrA"
+BOT_TOKEN = ""
+with open("token.txt", "r") as f:
+    BOT_TOKEN = f.readline()
 VALORANT_ICON = "https://cdn.iconscout.com/icon/free/png-256/valorant-3251602-2724649.png"
 ADMINS = [312250768038297600]
 PINGS_CHANNEL = 1034961307381805107
