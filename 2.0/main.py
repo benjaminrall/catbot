@@ -552,7 +552,7 @@ async def stats(ctx, user: discord.Member = None):
         + f"They have voted to punish people {user_data['punish_votes']} times and pardoned people {user_data['pardon_votes']} times."
     )
 
-    ctx.respond(embed=embed)
+    await ctx.respond(embed=embed)
 
 @bot.slash_command(description="Get each player's score and judge them to decide the ultimate 5 stack ruiner.")
 async def judgement(ctx):
