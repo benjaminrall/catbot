@@ -123,7 +123,7 @@ class ValorantCall:
         if all(self.confirmed):
             self.deactivate()
             ended_embed = await generate_embed(bot, self)
-            await self.interaction.edit_original_message(embed=ended_embed, view=None)
+            await self.interaction.edit_original_response(embed=ended_embed, view=None)
             
 
 async def generate_embed(bot: Bot, valorant_call: ValorantCall) -> Embed:

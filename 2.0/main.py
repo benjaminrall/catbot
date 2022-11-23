@@ -84,7 +84,7 @@ async def cancel(ctx):
     valorant_call.deactivate()
     cancelled_embed = Embed()
     cancelled_embed.set_author(name="Valorant call cancelled.", icon_url=VALORANT_ICON)
-    await valorant_call.interaction.edit_original_message(embed=cancelled_embed, view=None)
+    await valorant_call.interaction.edit_original_response(embed=cancelled_embed, view=None)
     await ctx.respond(content="Valorant call cancelled succesfully.", ephemeral=True)
 
 # ACCEPT COMMAND
@@ -104,7 +104,7 @@ async def accept(ctx):
             + "that you are not a part of.", ephemeral=True)
     # Valid acceptance
     elif accept_response == 0:
-        await valorant_call.interaction.edit_original_message(embed=await generate_embed(bot, valorant_call))
+        await valorant_call.interaction.edit_original_response(embed=await generate_embed(bot, valorant_call))
         followup_embed = Embed()
         followup_embed.set_author(name=ctx.interaction.user.display_name 
             + " has accepted the call.", icon_url=VALORANT_ICON)
@@ -139,7 +139,7 @@ async def reject(ctx, reason: str = None):
             + "that you are not a part of.", ephemeral=True)
     # Valid rejection
     elif reject_response == 0:
-        await valorant_call.interaction.edit_original_message(embed=await generate_embed(bot, valorant_call))
+        await valorant_call.interaction.edit_original_response(embed=await generate_embed(bot, valorant_call))
         followup_embed = Embed(description=f"Reason" + " yet to be provided." if reason is None else reason)
         followup_embed.set_author(name=ctx.interaction.user.display_name 
             + " has rejected the call" + (" with a reason." if reason is not None else "."), icon_url=VALORANT_ICON)
@@ -171,7 +171,7 @@ async def reason(ctx, reason: str):
             + "that you are not a part of.", ephemeral=True)
     # Valid rejection
     elif reject_response == 0:
-        await valorant_call.interaction.edit_original_message(embed=await generate_embed(bot, valorant_call))
+        await valorant_call.interaction.edit_original_response(embed=await generate_embed(bot, valorant_call))
         followup_embed = Embed(description=f"Reason" + " yet to be provided." if reason is None else reason)
         followup_embed.set_author(name=ctx.interaction.user.display_name 
             + " has rejected the call" + (" with a reason." if reason is not None else "."), icon_url=VALORANT_ICON)
@@ -329,7 +329,7 @@ async def finalise_current_vote():
     interaction: Interaction = current_vote["interaction"]
     vote_embed = Embed()
     vote_embed.set_author(name="This vote has now ended.", icon_url=current_vote["target"].display_avatar)
-    await interaction.edit_original_message(embed=vote_embed, view=None)
+    await interaction.edit_original_response(embed=vote_embed, view=None)
     ended_embed = Embed()
     ended_embed.set_author(name=f"The vote against {current_vote['target'].display_name} has concluded.", 
         icon_url=current_vote['target'].display_avatar)
@@ -348,7 +348,7 @@ async def finalise_current_vote():
         verdict = "The vote ended in a draw, so no action has been taken."
     ended_embed.add_field(name="Final Verdict:", value=verdict)
     valorant_call.voted[valorant_call.users.index(current_vote["target"].id)] = True
-    await valorant_call.interaction.edit_original_message(
+    await valorant_call.interaction.edit_original_response(
         embed = await generate_embed(bot, valorant_call),
         view = await generate_view(bot, valorant_call)
     )
@@ -493,7 +493,7 @@ async def finalise_current_punish_vote():
     interaction: Interaction = current_vote["interaction"]
     vote_embed = Embed()
     vote_embed.set_author(name="This vote has now ended.", icon_url=current_vote["target"].display_avatar)
-    await interaction.edit_original_message(embed=vote_embed, view=None)
+    await interaction.edit_original_response(embed=vote_embed, view=None)
     ended_embed = Embed()
     ended_embed.set_author(name=f"The vote against {current_vote['target'].display_name} has concluded.", 
         icon_url=current_vote['target'].display_avatar)
